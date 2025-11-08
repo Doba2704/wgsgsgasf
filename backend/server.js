@@ -1,4 +1,4 @@
-// --- (ЗАМІНИТИ) bank-project/backend/server.js (v18.3 - Новий профіль) ---
+// --- (ЗАМІНИТИ) bank-project/backend/server.js (v18.4 - Додано Реєстрацію) ---
 const express = require('express');
 const cors = require('cors');
 const app = express();
@@ -15,7 +15,6 @@ let db = {
       email: 'user@gmail.com', 
       password: '123', 
       name: 'Alex D.',
-      // (НОВЕ v18.3) - Додаємо більше даних
       phone: '+380 99 123 4567',
       address: 'м. Київ, вул. Хрещатик, 1'
     }
@@ -25,6 +24,7 @@ let db = {
 };
 let nextTxId = 1;
 let nextAccId = 1;
+let nextUserId = 2; // (НОВЕ v18.4)
 // --- Кінець Фейкової Бази Даних ---
 
 // (Auth)
@@ -38,16 +38,46 @@ app.post('/login', (req, res) => {
   }
 });
 
-// (ОНОВЛЕНО v18.3 - Повертаємо всі дані профілю)
+// (НОВЕ v18.4 - Ендпоінт для Реєстрації)
+app.post('/register', (req, res) => {
+  const { email, password } = req.body;
+  
+  // Перевірка, чи email вже зайнятий
+  const existingUser = db.users.find(u => u.email === email);
+  if (existingUser) {
+    return res.status(400).json({ success: false, error: 'Цей email вже зареєстрований' });
+  }
+  
+  // Створюємо нового користувача
+  const newUser = {
+    id: `u${nextUserId++}`,
+    email: email,
+    password: password, // (В реальному житті пароль треба хешувати!)
+    name: email.split('@')[0], // Ім'я за замовчуванням
+    phone: '',
+    address: ''
+  };
+  db.users.push(newUser);
+  
+  console.log('New user registered:', newUser);
+  
+  // Надсилаємо відповідь про успіх (так само, як і логін)
+  res.json({ success: true, message: 'Реєстрація успішна', email: newUser.email });
+});
+// --- Кінець нового розділу ---
+
+// (Profile)
 app.get('/profile', (req, res) => {
-  const user = db.users[0];
+  // УВАГА: Цей код все ще повертає *першого* користувача. 
+  // Для справжньої багатокористувацької системи потрібна аутентифікація.
+  const user = db.users[0]; 
   if (user) {
     res.json({
       name: user.name,
       email: user.email,
       phone: user.phone,
       address: user.address,
-      memberSince: '2025-10-01T10:00:00Z' // Фейкова дата
+      memberSince: '2025-10-01T10:00:00Z' 
     });
   } else {
     res.status(404).json({ error: 'Користувача не знайдено' });
@@ -230,5 +260,5 @@ app.get('/wealth', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`(v18.3) Server running on http://localhost:${PORT}`);
+  console.log(`(v18.4) Server running on http://localhost:${PORT}`);
 });
